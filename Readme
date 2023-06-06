@@ -1,0 +1,19 @@
+现代化的逻辑开发
+1. 使用cmake进行项目管理
+2. 分离属性，可以方便的适配不同系统
+3. 使用newlib来作为libc,并使用qemu来验证
+
+修改点：
+1. 默认实现newlib桩函数
+2. 修改默认链接脚本，添加堆栈和数据区地址
+
+使用方法：
+1. 创建build目录
+2. 使用cmake -DCMAKE_TOOLCHAIN_FILE=../scripts/arm-none-eabi.cmake进行交叉便于
+
+cmake选项:
+1. MAPS: 打开构建地址信息
+2. VERBOSE: 打开详细的编译输出
+3. TEXT: 代码段起始地址
+4. DATA: 数据段起始地址
+5. STACK: 堆栈段起始地址

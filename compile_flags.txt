@@ -1,0 +1,14 @@
+-xc++
+-std=gnu++11
+-ffreestanding
+-stdlib=libstdc++
+-target
+arm-none-eabi
+-I 
+include
+-idirafter
+/usr/include/newlib/
+-isystem
+/usr/include/newlib/c++/10.3.1/
+-isystem
+/usr/include/newlib/c++/10.3.1/arm-none-eabi/arm/v5te/softfp
