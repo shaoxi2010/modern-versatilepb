@@ -10,4 +10,6 @@ __attribute__((noreturn)) void _exit(int status)
 	reg1 = 0x20026; // ADP_Stopped_ApplicationExit
 
 	asm("svc 0x00123456"); // make semihosting call
+
+    while (1);
 }

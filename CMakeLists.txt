@@ -17,6 +17,7 @@ set(TARGET ${PROJECT_NAME})
 
 add_subdirectory(app)
 add_subdirectory(newlib-stub)
+add_subdirectory(gcov-stub)
 
 #编译链接
 add_executable(${TARGET})
