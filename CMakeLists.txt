@@ -11,13 +11,22 @@ set(CMAKE_VERBOSE_MAKEFILE ${VERBOSE})
 option(TEXT "代码段起始地址")
 option(DATA "数据段起始地址")
 option(STACK "堆栈段起始地址")
+option(GCOV "代码覆盖率检查")
 
 #目标程序名称
 set(TARGET ${PROJECT_NAME})
 
 add_subdirectory(app)
 add_subdirectory(newlib-stub)
+if(GCOV)
+# Check GCC version
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12)
+        message(FATAL_ERROR "GCOV need GCC version must be less than 12")
+    endif()
+endif()
 add_subdirectory(gcov-stub)
+endif()
 
 #编译链接
 add_executable(${TARGET})
@@ -44,7 +53,7 @@ endif()
 add_custom_command(
     TARGET ${TARGET} 
     POST_BUILD
-    COMMAND qemu-system-arm -machine versatilepb -display none -semihosting -serial stdio  -kernel ${CMAKE_BINARY_DIR}/${TARGET}
+    COMMAND qemu-system-arm -machine versatilepb -display none -semihosting -serial stdio  -kernel ${CMAKE_BINARY_DIR}/${TARGET} > ${CMAKE_BINARY_DIR}/log.txt
     COMMENT "test on qemu"
     VERBATIM
 )
