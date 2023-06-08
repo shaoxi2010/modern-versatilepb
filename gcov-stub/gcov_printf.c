@@ -43,109 +43,111 @@
  * The following functions support gcov_printf and are not meant to be
  * called otherwise.
  **********************************************************************/
-static void gcov_uli2a(unsigned long int num, unsigned int base, int uc,char * bf);
-static void gcov_uli2a(unsigned long int num, unsigned int base, int uc,char * bf)
+static void gcov_uli2a(unsigned long int num, unsigned int base, int uc,
+					   char *bf);
+static void gcov_uli2a(unsigned long int num, unsigned int base, int uc,
+					   char *bf)
 {
-	int n=0;
-	unsigned int d=1;
-	while (num/d >= base)
-		d*=base;
-	while (d!=0) {
+	int n = 0;
+	unsigned int d = 1;
+	while (num / d >= base)
+		d *= base;
+	while (d != 0) {
 		int dgt = num / d;
-		num%=d;
-		d/=base;
-		if (n || dgt>0|| d==0) {
-			*bf++ = dgt+(dgt<10 ? '0' : (uc ? 'A' : 'a')-10);
+		num %= d;
+		d /= base;
+		if (n || dgt > 0 || d == 0) {
+			*bf++ = dgt + (dgt < 10 ? '0' : (uc ? 'A' : 'a') - 10);
 			++n;
 		}
 	}
-	*bf=0;
+	*bf = 0;
 }
 
-static void gcov_li2a (long num, char * bf);
-static void gcov_li2a (long num, char * bf)
+static void gcov_li2a(long num, char *bf);
+static void gcov_li2a(long num, char *bf)
 {
-	if (num<0) {
-		num=-num;
+	if (num < 0) {
+		num = -num;
 		*bf++ = '-';
 	}
-	gcov_uli2a(num,10,0,bf);
+	gcov_uli2a(num, 10, 0, bf);
 }
 
-static void gcov_ui2a(unsigned int num, unsigned int base, int uc,char * bf);
-static void gcov_ui2a(unsigned int num, unsigned int base, int uc,char * bf)
+static void gcov_ui2a(unsigned int num, unsigned int base, int uc, char *bf);
+static void gcov_ui2a(unsigned int num, unsigned int base, int uc, char *bf)
 {
-	int n=0;
-	unsigned int d=1;
-	while (num/d >= base)
-		d*=base;
-	while (d!=0) {
+	int n = 0;
+	unsigned int d = 1;
+	while (num / d >= base)
+		d *= base;
+	while (d != 0) {
 		int dgt = num / d;
-		num%= d;
-		d/=base;
-		if (n || dgt>0 || d==0) {
-			*bf++ = dgt+(dgt<10 ? '0' : (uc ? 'A' : 'a')-10);
+		num %= d;
+		d /= base;
+		if (n || dgt > 0 || d == 0) {
+			*bf++ = dgt + (dgt < 10 ? '0' : (uc ? 'A' : 'a') - 10);
 			++n;
 		}
 	}
-	*bf=0;
+	*bf = 0;
 }
 
-static void gcov_i2a (int num, char * bf);
-static void gcov_i2a (int num, char * bf)
+static void gcov_i2a(int num, char *bf);
+static void gcov_i2a(int num, char *bf)
 {
-	if (num<0) {
-		num=-num;
+	if (num < 0) {
+		num = -num;
 		*bf++ = '-';
 	}
-	gcov_ui2a(num,10,0,bf);
+	gcov_ui2a(num, 10, 0, bf);
 }
 
 static int gcov_a2d(char ch);
 static int gcov_a2d(char ch)
 {
-	if (ch>='0' && ch<='9')
-		return ch-'0';
-	else if (ch>='a' && ch<='f')
-		return ch-'a'+10;
-	else if (ch>='A' && ch<='F')
-		return ch-'A'+10;
-	else return -1;
+	if (ch >= '0' && ch <= '9')
+		return ch - '0';
+	else if (ch >= 'a' && ch <= 'f')
+		return ch - 'a' + 10;
+	else if (ch >= 'A' && ch <= 'F')
+		return ch - 'A' + 10;
+	else
+		return -1;
 }
 
-static char gcov_a2i(char ch, const char* src,int base,int* nump,int *numc);
-static char gcov_a2i(char ch, const char* src,int base,int* nump,int *numc)
+static char gcov_a2i(char ch, const char *src, int base, int *nump, int *numc);
+static char gcov_a2i(char ch, const char *src, int base, int *nump, int *numc)
 {
-	const char* p= src;
-	int n=0;
-	int num=0;
+	const char *p = src;
+	int n = 0;
+	int num = 0;
 	int digit;
-	while ((digit=gcov_a2d(ch))>=0) {
-		if (digit>base) break;
-		num=num*base+digit;
-		ch=*p++;
+	while ((digit = gcov_a2d(ch)) >= 0) {
+		if (digit > base)
+			break;
+		num = num * base + digit;
+		ch = *p++;
 		n++;
 	}
-	*nump=num;
-	*numc=n;
+	*nump = num;
+	*numc = n;
 	return ch;
 }
 
-static void gcov_putchw(int n, char z, char* bf);
-static void gcov_putchw(int n, char z, char* bf)
+static void gcov_putchw(int n, char z, char *bf);
+static void gcov_putchw(int n, char z, char *bf)
 {
-	char fc=z? '0' : ' ';
+	char fc = z ? '0' : ' ';
 	char ch;
-	char* p=bf;
+	char *p = bf;
 	while (*p++ && n > 0)
 		n--;
 	while (n-- > 0)
-		write_bytes(1,&fc,1);
-	while ((ch= *bf++))
-		write_bytes(1,&ch,1);
+		write_bytes(1, &fc, 1);
+	while ((ch = *bf++))
+		write_bytes(1, &ch, 1);
 }
-
-
 
 /**********************************************************************/
 /** @brief
@@ -170,64 +172,66 @@ static void gcov_format(const char *fmt, va_list va)
 	char c2;
 	char abort_flg = 0; // make nonzero to abort
 
-	while ((ch=*(fmt++)) && (!abort_flg)) {
-		if (ch!='%')
-			write_bytes(1,&ch,1);
+	while ((ch = *(fmt++)) && (!abort_flg)) {
+		if (ch != '%')
+			write_bytes(1, &ch, 1);
 		else {
-			char lz=0;
-			char lng=0;
-			int w=0;
-			int n=0;
-			ch=*(fmt++);
-			if (ch=='0') {
-				ch=*(fmt++);
-				lz=1;
+			char lz = 0;
+			char lng = 0;
+			int w = 0;
+			int n = 0;
+			ch = *(fmt++);
+			if (ch == '0') {
+				ch = *(fmt++);
+				lz = 1;
 			}
-			if (ch>='0' && ch<='9') {
-				ch=gcov_a2i(ch,fmt,10,&w,&n);
-				fmt+=n;
+			if (ch >= '0' && ch <= '9') {
+				ch = gcov_a2i(ch, fmt, 10, &w, &n);
+				fmt += n;
 			}
-			if (ch=='l') {
-				ch=*(fmt++);
-				lng=1;
+			if (ch == 'l') {
+				ch = *(fmt++);
+				lng = 1;
 			}
-			if(ch==0) {
+			if (ch == 0) {
 				abort_flg = 1;
-			}
-			else {
+			} else {
 				switch (ch) {
-				case 'u' : {
+				case 'u': {
 					if (lng)
-						gcov_uli2a(va_arg(va, unsigned long int),10,0,bf);
+						gcov_uli2a(va_arg(va, unsigned long int), 10, 0, bf);
 					else
-						gcov_ui2a(va_arg(va, unsigned int),10,0,bf);
-					gcov_putchw(w,lz,bf);
+						gcov_ui2a(va_arg(va, unsigned int), 10, 0, bf);
+					gcov_putchw(w, lz, bf);
 					break;
 				}
-				case 'd' :  {
+				case 'd': {
 					if (lng)
-						gcov_li2a(va_arg(va, unsigned long int),bf);
+						gcov_li2a(va_arg(va, unsigned long int), bf);
 					else
-						gcov_i2a(va_arg(va, int),bf);
-					gcov_putchw(w,lz,bf);
+						gcov_i2a(va_arg(va, int), bf);
+					gcov_putchw(w, lz, bf);
 					break;
 				}
-				case 'x': case 'X' :
+				case 'x':
+				case 'X':
 					if (lng)
-						gcov_uli2a(va_arg(va, unsigned long int),16,(ch=='X'),bf);
+						gcov_uli2a(va_arg(va, unsigned long int), 16,
+								   (ch == 'X'), bf);
 					else
-						gcov_ui2a(va_arg(va, unsigned int),16,(ch=='X'),bf);
-					gcov_putchw(w,lz,bf);
+						gcov_ui2a(va_arg(va, unsigned int), 16, (ch == 'X'),
+								  bf);
+					gcov_putchw(w, lz, bf);
 					break;
-				case 'c' :
+				case 'c':
 					c2 = (char)(va_arg(va, int));
-					write_bytes(1,&c2,1);
+					write_bytes(1, &c2, 1);
 					break;
-				case 's' :
-					gcov_putchw(w,0,va_arg(va, char*));
+				case 's':
+					gcov_putchw(w, 0, va_arg(va, char *));
 					break;
-				case '%' :
-					write_bytes(1,&ch,1);
+				case '%':
+					write_bytes(1, &ch, 1);
 				default:
 					break;
 				}
@@ -235,8 +239,6 @@ static void gcov_format(const char *fmt, va_list va)
 		}
 	}
 }
-
-
 
 /**********************************************************************/
 /** @brief Simplistic printf() function, floating point not supported
@@ -251,13 +253,12 @@ static void gcov_format(const char *fmt, va_list va)
 void gcov_printf(const char *fmt, ...)
 {
 	va_list va;
-	va_start(va,fmt);
-	gcov_format(fmt,va);
+	va_start(va, fmt);
+	gcov_format(fmt, va);
 	va_end(va);
 }
 
 #endif // GCOV_OPT_PROVIDE_PRINTF_IMITATION
-
 
 /** @}
  */
@@ -269,26 +270,28 @@ void gcov_printf(const char *fmt, ...)
  *
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
  *    Redistributions of source code must retain the above copyright notice,
  *        this list of conditions and the following disclaimer.
  *    Redistributions in binary form must reproduce the above copyright notice,
- *        this list of conditions and the following disclaimer in the documentation
- *        and/or other materials provided with the distribution.
- *    Neither the name of Caltech nor its operating division, the Jet Propulsion Laboratory,
- *        nor the names of its contributors may be used to endorse or promote products
- *        derived from this software without specific prior written permission.
+ *        this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution. Neither
+ * the name of Caltech nor its operating division, the Jet Propulsion
+ * Laboratory, nor the names of its contributors may be used to endorse or
+ * promote products derived from this software without specific prior written
+ * permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  *
  */

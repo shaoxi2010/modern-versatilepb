@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.18)
 project(versatilepb)
 
 # CMAKE_TOOLCHAIN_FILE 指定工具链集合
@@ -18,6 +18,7 @@ set(TARGET ${PROJECT_NAME})
 
 add_subdirectory(app)
 add_subdirectory(newlib-stub)
+add_subdirectory(cpu)
 if(GCOV)
 # Check GCC version
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")

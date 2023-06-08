@@ -40,7 +40,6 @@
 #include "defs.h"
 #endif // GCOV_OPT_RESET_WATCHDOG
 
-
 /**
  * struct gcov_ctr_info - information about counters for a single function
  * @num: number of counter values for this type
@@ -83,7 +82,7 @@ struct gcov_fn_info {
 
 /* Type of function used to merge counters.  */
 /* Compare to libgcc/libgcov.h */
-typedef void (*gcov_merge_fn) (gcov_type *, gcov_unsigned_t);
+typedef void (*gcov_merge_fn)(gcov_type *, gcov_unsigned_t);
 
 /**
  * struct gcov_info - profiling data per object file
@@ -116,7 +115,7 @@ struct gcov_info {
 /**
  * gcov_info_filename - return info filename
  * @info: profiling data set
- * 
+ *
  * Need this to access opaque gcov_info to get filename in public code.
  */
 const char *gcov_info_filename(struct gcov_info *info)
@@ -139,7 +138,8 @@ const char *gcov_info_filename(struct gcov_info *info)
  */
 /* Slightly like gcc/gcov-io.c function gcov_write_unsigned() (1-word item) */
 /* Need buffer to be 32-bit-aligned for type-safe internal usage */
-static size_t store_gcov_unsigned(gcov_unsigned_t *buffer, size_t off, gcov_unsigned_t v)
+static size_t store_gcov_unsigned(gcov_unsigned_t *buffer, size_t off,
+								  gcov_unsigned_t v)
 {
 	gcov_unsigned_t *data;
 
@@ -149,7 +149,7 @@ static size_t store_gcov_unsigned(gcov_unsigned_t *buffer, size_t off, gcov_unsi
 	}
 
 	/* return count of buffer data type units */
-	return sizeof(*data)/sizeof(*buffer);
+	return sizeof(*data) / sizeof(*buffer);
 }
 
 /**
@@ -165,10 +165,12 @@ static size_t store_gcov_unsigned(gcov_unsigned_t *buffer, size_t off, gcov_unsi
  * first. Returns the number of bytes stored. If @buffer is %NULL, doesn't store
  * anything.
  */
-/* Slightly like gcc/gcov-io.c function gcov_write_tag_length() (1-word tag and 1-word length) */
+/* Slightly like gcc/gcov-io.c function gcov_write_tag_length() (1-word tag and
+ * 1-word length) */
 /* or gcov_write_tag() (1-word tag and implied 1-word "length = 0") */
 /* Need buffer to be 32-bit-aligned for type-safe internal usage */
-static size_t store_gcov_tag_length(gcov_unsigned_t *buffer, size_t off, gcov_unsigned_t tag, gcov_unsigned_t length)
+static size_t store_gcov_tag_length(gcov_unsigned_t *buffer, size_t off,
+									gcov_unsigned_t tag, gcov_unsigned_t length)
 {
 	gcov_unsigned_t *data;
 
@@ -180,7 +182,7 @@ static size_t store_gcov_tag_length(gcov_unsigned_t *buffer, size_t off, gcov_un
 	}
 
 	/* return count of buffer data type units */
-	return sizeof(*data)/sizeof(*buffer) * 2;
+	return sizeof(*data) / sizeof(*buffer) * 2;
 }
 
 /**
@@ -197,7 +199,8 @@ static size_t store_gcov_tag_length(gcov_unsigned_t *buffer, size_t off, gcov_un
  */
 /* Slightly like gcc/gcov-io.c function gcov_write_counter() (2-word item) */
 /* Need buffer to be 32-bit-aligned for type-safe internal usage */
-static size_t store_gcov_counter(gcov_unsigned_t *buffer, size_t off, gcov_type v)
+static size_t store_gcov_counter(gcov_unsigned_t *buffer, size_t off,
+								 gcov_type v)
 {
 	gcov_unsigned_t *data;
 
@@ -209,7 +212,7 @@ static size_t store_gcov_counter(gcov_unsigned_t *buffer, size_t off, gcov_type 
 	}
 
 	/* return count of buffer data type units */
-	return sizeof(*data)/sizeof(*buffer) * 2;
+	return sizeof(*data) / sizeof(*buffer) * 2;
 }
 
 /**
@@ -219,7 +222,8 @@ static size_t store_gcov_counter(gcov_unsigned_t *buffer, size_t off, gcov_type 
  *
  * Returns the number of bytes that were/would have been stored into the buffer.
  */
-/* Our own creation, but compare to libgcc/libgcov-driver.c function write_one_data() */
+/* Our own creation, but compare to libgcc/libgcov-driver.c function
+ * write_one_data() */
 /* Need buffer to be 32-bit-aligned for type-safe internal usage */
 size_t gcov_convert_to_gcda(gcov_unsigned_t *buffer, struct gcov_info *gi_ptr)
 {
@@ -239,13 +243,15 @@ size_t gcov_convert_to_gcda(gcov_unsigned_t *buffer, struct gcov_info *gi_ptr)
 		fi_ptr = gi_ptr->functions[fi_idx];
 
 #ifdef GCOV_OPT_RESET_WATCHDOG
-		/* In an embedded system, you might want to reset any watchdog timer here, */
+		/* In an embedded system, you might want to reset any watchdog timer
+		 * here, */
 		/* depending on your timeout versus gcov tree size */
 		SP_WDG = WATCHDOG_RESET;
 #endif // GCOV_OPT_RESET_WATCHDOG
 
 		/* Function record. */
-		pos += store_gcov_tag_length(buffer, pos, GCOV_TAG_FUNCTION, GCOV_TAG_FUNCTION_LENGTH);
+		pos += store_gcov_tag_length(buffer, pos, GCOV_TAG_FUNCTION,
+									 GCOV_TAG_FUNCTION_LENGTH);
 
 		pos += store_gcov_unsigned(buffer, pos, fi_ptr->ident);
 		pos += store_gcov_unsigned(buffer, pos, fi_ptr->lineno_checksum);
@@ -260,13 +266,12 @@ size_t gcov_convert_to_gcda(gcov_unsigned_t *buffer, struct gcov_info *gi_ptr)
 			}
 
 			/* Counter record. */
-			pos += store_gcov_tag_length(buffer, pos,
-					      GCOV_TAG_FOR_COUNTER(ct_idx),
-					      GCOV_TAG_COUNTER_LENGTH(ci_ptr->num));
+			pos +=
+				store_gcov_tag_length(buffer, pos, GCOV_TAG_FOR_COUNTER(ct_idx),
+									  GCOV_TAG_COUNTER_LENGTH(ci_ptr->num));
 
 			for (cv_idx = 0; cv_idx < ci_ptr->num; cv_idx++) {
-				pos += store_gcov_counter(buffer, pos,
-						      ci_ptr->values[cv_idx]);
+				pos += store_gcov_counter(buffer, pos, ci_ptr->values[cv_idx]);
 			}
 			ci_ptr++;
 		}
@@ -281,7 +286,8 @@ size_t gcov_convert_to_gcda(gcov_unsigned_t *buffer, struct gcov_info *gi_ptr)
  * @info: profiling data set to be cleared
  *
  */
-/* Our own creation, but compare to libgcc/libgcov-driver.c function write_one_data() */
+/* Our own creation, but compare to libgcc/libgcov-driver.c function
+ * write_one_data() */
 void gcov_clear_counters(struct gcov_info *gi_ptr)
 {
 	const struct gcov_fn_info *fi_ptr;
@@ -304,7 +310,7 @@ void gcov_clear_counters(struct gcov_info *gi_ptr)
 
 			/* Counter record. */
 			for (cv_idx = 0; cv_idx < ci_ptr->num; cv_idx++) {
-			      ci_ptr->values[cv_idx] = 0;
+				ci_ptr->values[cv_idx] = 0;
 			}
 			ci_ptr++;
 		}
@@ -323,26 +329,28 @@ void gcov_clear_counters(struct gcov_info *gi_ptr)
  *
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
  *    Redistributions of source code must retain the above copyright notice,
  *        this list of conditions and the following disclaimer.
  *    Redistributions in binary form must reproduce the above copyright notice,
- *        this list of conditions and the following disclaimer in the documentation
- *        and/or other materials provided with the distribution.
- *    Neither the name of Caltech nor its operating division, the Jet Propulsion Laboratory,
- *        nor the names of its contributors may be used to endorse or promote products
- *        derived from this software without specific prior written permission.
+ *        this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution. Neither
+ * the name of Caltech nor its operating division, the Jet Propulsion
+ * Laboratory, nor the names of its contributors may be used to endorse or
+ * promote products derived from this software without specific prior written
+ * permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  *
  */
