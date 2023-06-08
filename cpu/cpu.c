@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <cpu.h>
 
 #define ICACHE_MASK (uint32_t)(1 << 12)
 #define DCACHE_MASK (uint32_t)(1 << 2)

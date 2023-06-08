@@ -16,9 +16,14 @@ option(GCOV "代码覆盖率检查")
 #目标程序名称
 set(TARGET ${PROJECT_NAME})
 
+include_directories(
+    ${PROJECT_SOURCE_DIR}/include
+)
+
 add_subdirectory(app)
 add_subdirectory(newlib-stub)
 add_subdirectory(cpu)
+add_subdirectory(init)
 if(GCOV)
 # Check GCC version
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -28,6 +33,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 endif()
 add_subdirectory(gcov-stub)
 endif()
+
 
 #编译链接
 add_executable(${TARGET})

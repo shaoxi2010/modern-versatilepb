@@ -24,18 +24,44 @@
 .extern hal_irq_handle
 .extern hal_fiq_handle
 
-.global hal_undefine
-.global hal_swi
-.global hal_prefetch_abrot
-.global hal_data_abrot
-.global no_use
-.global hal_irq
-.global hal_fiq
-
 .text
 .code	32
 
-.global	undef_handler
+.global hal_vectors_start
+
+hal_vectors_start:
+    @ Exception vectors, relative to the base address, see page 2-26 of DDI0222
+    ldr pc, reset_handler_addr             @ Reset (and startup) vector
+    ldr pc, undef_handler_addr             @ Undefined (unknown) instruction
+    ldr pc, swi_handler_addr               @ Software interrupt
+    ldr pc, prefetch_abort_handler_addr    @ Prefetch abort
+    ldr pc, data_abort_handler_addr        @ Data abort (system bus cannot access a peripheral)
+    ldr pc, invalid_addr_handler           @ Reserved (early ARM only supported 26-bit addresses)
+    ldr pc, irq_handler_addr               @ IRQ handler
+    ldr pc, fiq_handler_addr               @ FIQ handler
+
+@ Labels with addresses to exception handler routines, referenced above:
+reset_handler_addr:
+    .word _start
+undef_handler_addr:
+    .word hal_undefine
+swi_handler_addr:
+    .word hal_swi
+prefetch_abort_handler_addr:
+    .word hal_prefetch_abort
+data_abort_handler_addr:
+    .word hal_data_abort
+invalid_addr_handler:
+    .word no_use
+irq_handler_addr:
+    .word hal_irq
+fiq_handler_addr:
+    .word hal_fiq
+
+.global hal_vectors_end
+hal_vectors_end:
+
+
 /*
  * 	对arm架构不管是多少级流水线都按三级流水线来计算pc
  *	指令地址
@@ -79,7 +105,7 @@ hal_swi:
 	bl hal_swi_handle
 	ldmfd sp!, {r0-r12, pc}^			/*恢复中断前对应模式的寄存器*/
 
-hal_prefetch_abrot:
+hal_prefetch_abort:
 	/*
 		发生预取指令异常时，pc = A+8, 所以lr = A + 4,即下一条指令的地址
 		中断处理完毕后需要重新执行这条指令，所以lr需要减4
@@ -104,7 +130,7 @@ hal_prefetch_abrot:
 	add sp, sp, #60
 	ldmfd sp!, {pc}^
 
-hal_data_abrot:
+hal_data_abort:
 	/*
 		发生数据访问异常时，pc = A+12, 所以lr = A + 8,即下一条指令的地址
 		中断处理完毕后需要重新预取数据，所以lr需要减8
