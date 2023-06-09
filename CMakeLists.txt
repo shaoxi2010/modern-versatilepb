@@ -13,6 +13,8 @@ option(DATA "数据段起始地址")
 option(STACK "堆栈段起始地址")
 option(GCOV "代码覆盖率检查")
 
+set(CMAKE_BUILD_TYPE Release)
+
 #目标程序名称
 set(TARGET ${PROJECT_NAME})
 
