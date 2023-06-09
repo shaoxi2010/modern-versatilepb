@@ -15,7 +15,7 @@ option(GCOV "代码覆盖率检查")
 option(LTO "lto连接时优化")
 option(GC_SECTION "优化删除未使用的代码")
 
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
 
 #目标程序名称
 set(TARGET ${PROJECT_NAME})
@@ -80,7 +80,7 @@ endif()
 add_custom_command(
     TARGET ${TARGET} 
     POST_BUILD
-    COMMAND qemu-system-arm -machine versatilepb -display none -semihosting -serial stdio  -kernel ${CMAKE_BINARY_DIR}/${TARGET} > ${CMAKE_BINARY_DIR}/log.txt
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/qemu-system-arm -machine versatilepb -display none -semihosting -serial stdio -kernel ${CMAKE_BINARY_DIR}/${TARGET} > ${CMAKE_BINARY_DIR}/log.txt
     COMMENT "test on qemu"
     VERBATIM
 )

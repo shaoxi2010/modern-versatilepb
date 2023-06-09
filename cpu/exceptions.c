@@ -1,8 +1,9 @@
+#include <compiler.h>
+#include <stdint.h>
 #include <exceptions.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
-#include <compiler.h>
 
 void dump_regs(struct registers *regs)
 {
@@ -27,7 +28,12 @@ WEAK void hal_undefine_handle(struct registers *regs)
 	dump_regs(regs);
 	__asm__ __volatile__("mcr p15, 0, %0, c7, c10, 4" : : "r"(0) : "memory");
 }
-WEAK void hal_swi_handle(void) { printf("swi\n"); }
+WEAK void hal_swi_handle(struct registers *regs)
+{
+	printf("swi\n");
+	dump_regs(regs);
+	__asm__ __volatile__("mcr p15, 0, %0, c7, c10, 4" : : "r"(0) : "memory");
+}
 WEAK void hal_prefectabort_handle(struct registers *regs)
 {
 	printf("prefect abort\n");

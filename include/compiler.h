@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#define NAKED		__attribute__((naked))
+
 #define WEAK		__attribute__((weak))
 
 #define UNUSED		__attribute__((unused))

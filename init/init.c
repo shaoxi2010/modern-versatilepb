@@ -1,6 +1,7 @@
 /*
  *  newlib/newlib/libc/misc/init.c
- *  hardware_init_hook -> softwae_init_hook ->preinit_array -> _init -> init_array -> main
+ *  hardware_init_hook -> software_init_hook ->preinit_array -> _init ->
+ * init_array -> main
  */
 #include <mmu.h>
 #include <exceptions.h>
@@ -20,3 +21,17 @@ void hardware_init_hook(void)
 	hw_dcache_enable();
 	hw_icache_enable();
  }
+
+#define MODE_SYS 0x0000001F
+#define FIQ_BIT	 0x00000040
+#define IRQ_BIT	 0x00000080
+
+/*NAKED防止gcc生成不必要的栈，模式切换会导致lr失效，故需要保护*/
+NAKED void software_init_hook(void)
+{
+	/* 切换运行模式到system mode*/
+	asm("mov r0, lr\n\t"
+		"msr cpsr, %0\n\t"
+		"mov lr, r0\n\t"
+		::"i"(MODE_SYS | FIQ_BIT | IRQ_BIT));
+}
