@@ -9,6 +9,8 @@ extern "C" {
 
 #define UNUSED		__attribute__((unused))
 
+#define USED		__attribute__((used))
+
 #define ALIGNED(x)	__attribute__(aligned(x))
 
 #define CONSTRUCTOR __attribute__((constructor)) // prio is 65535
