@@ -13,6 +13,7 @@ option(DATA "数据段起始地址")
 option(STACK "堆栈段起始地址")
 option(GCOV "代码覆盖率检查")
 option(LTO "lto连接时优化")
+option(GC_SECTION "优化删除未使用的代码")
 
 set(CMAKE_BUILD_TYPE Release)
 
@@ -42,9 +43,17 @@ if(${LTO})
 add_compile_options(-flto -ffat-lto-objects)
 endif()
 
+if(${GC_SECTION})
+add_compile_options(-ffunction-sections, -fdata-sections)
+endif()
+
 #编译链接
 add_executable(${TARGET})
 target_link_libraries(${TARGET} ${TARGET_OBJS})
+
+if(${GC_SECTION})
+target_link_options(${TARGET} PRIVATE -Wl,--gc-sections)
+endif()
 
 if(${LTO})
 target_link_options(${TARGET} PRIVATE -flto -ffat-lto-objects)
