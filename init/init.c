@@ -7,6 +7,7 @@
 #include <exceptions.h>
 #include <cpu.h>
 #include <compiler.h>
+#include <stdint.h>
 
 void hardware_init_hook(void)
 {
@@ -26,12 +27,12 @@ void hardware_init_hook(void)
 #define FIQ_BIT	 0x00000040
 #define IRQ_BIT	 0x00000080
 
+static uint32_t lr = 0;
 /*NAKED防止gcc生成不必要的栈，模式切换会导致lr失效，故需要保护*/
 NAKED void software_init_hook(void)
 {
 	/* 切换运行模式到system mode*/
-	asm("mov r0, lr\n\t"
-		"msr cpsr, %0\n\t"
-		"mov lr, r0\n\t"
-		::"i"(MODE_SYS | FIQ_BIT | IRQ_BIT));
+	asm("mov %0, lr" : "=r"(lr)); // 保存lr到内存
+	asm("msr cpsr, %0" ::"i"(MODE_SYS | FIQ_BIT | IRQ_BIT));
+	asm("mov lr, %0" ::"r"(lr)); //恢复lr
 }

@@ -1,4 +1,5 @@
 /* 异常系统设计模式，匹配newlib栈模型
+* 参考汇编：https://software-dl.ti.com/codegen/docs/tiarmclang/rel1_3_0_LTS/migration_guide/migrating_assembly_source/converting_ti_syntax_asm_to_gnu_syntax_asm/asm_source_anatomy.html
 * newlib stack modes:               
 *   +-----+ <- SL_sys,          模型设计：
 *   |     |    SL_usr             1. 栈的关系比较混乱，就不统一栈模型来
@@ -46,15 +47,14 @@
     mrs r1, spsr
     and r0, r1, #PSR_MASK
     cmp r0, #MODE_USR
-    beq 1f
+    beq .L_\@
     cmp r0, #MODE_SYS
-    beq 1f
+    beq .L_\@
     ldmfd sp!, {r0, r1}
     b \sys_handler
-    b 2f
-1:  ldmfd sp!, {r0, r1}
+.L_\@:
+    ldmfd sp!, {r0, r1}
     b \usr_handler
-2:  b .
 .endm
 
 .macro switch_mode mode,disable_irq:req
@@ -174,9 +174,9 @@ hal_undefine:
         中断处理完毕后需要执行下一条指令，所以lr不需要修改
     */
     sub lr, lr, #0                      /*计算异常时的PC*/
-    dispatch_excption_by_mode 3f, 4f
-3:  sys_handler hal_undefine_handle
-4:  usr_handler hal_undefine_handle
+    dispatch_excption_by_mode 1f, 2f
+1:  sys_handler hal_undefine_handle
+2:  usr_handler hal_undefine_handle
 
 hal_swi:
 	/*
@@ -184,10 +184,9 @@ hal_swi:
         中断处理完毕后需要执行下一条指令，所以lr不需要修改，软中断系统直接在SVC模式
 	*/
 	sub lr, lr, #0
-    dispatch_excption_by_mode 3f, 4f
-3:  sys_handler hal_swi_handle
-4:  usr_handler hal_swi_handle
-
+    dispatch_excption_by_mode 1f, 2f
+1:  sys_handler hal_swi_handle
+2:  usr_handler hal_swi_handle
 
 hal_prefetch_abort:
 	/*
@@ -195,10 +194,9 @@ hal_prefetch_abort:
 		中断处理完毕后需要重新执行这条指令，所以lr需要减4
 	*/
 	sub lr, lr, #4                      /*计算异常时的PC*/
-    dispatch_excption_by_mode 3f, 4f
-3:  sys_handler hal_prefectabort_handle
-4:  usr_handler hal_prefectabort_handle
-
+    dispatch_excption_by_mode 1f, 2f
+1:  sys_handler hal_prefectabort_handle
+2:  usr_handler hal_prefectabort_handle
 
 hal_data_abort:
 	/*
@@ -206,9 +204,9 @@ hal_data_abort:
 		中断处理完毕后需要重新预取数据，所以lr需要减8
 	*/
 	sub lr, lr, #8                      /*计算异常时的PC*/
-    dispatch_excption_by_mode 3f, 4f
-3:  sys_handler hal_dataabort_handle
-4:  usr_handler hal_dataabort_handle
+    dispatch_excption_by_mode 1f, 2f
+1:  sys_handler hal_dataabort_handle
+2:  usr_handler hal_dataabort_handle
 
 
 no_use:
@@ -220,9 +218,9 @@ hal_irq:
 		中断处理完毕后需要执行下一条指令，所以lr需要减4
 	*/
 	sub lr, lr, #4                      /*计算异常时的PC*/
-    dispatch_excption_by_mode 3f, 4f
-3:  sys_handler hal_irq_handle
-4:  usr_handler hal_irq_handle
+    dispatch_excption_by_mode 1f, 2f
+1:  sys_handler hal_irq_handle
+2:  usr_handler hal_irq_handle
 	
 hal_fiq:
 	/*
