@@ -93,7 +93,7 @@
     bl \handler
     ldmfd sp!, {r0}						/*弹出spsr*/
     msr spsr, r0 						/*将spsr(中断前的cpsr)存入svc模式的spsr中*/
-    ldmfd sp, {r0-sp}^					/*恢复中断前对应模式的寄存器*/
+    ldmfd sp, {r0-lr}^					/*恢复中断前对应模式的寄存器*/
     add sp, sp, #60
     ldmfd sp!, {pc}^
 .endm
