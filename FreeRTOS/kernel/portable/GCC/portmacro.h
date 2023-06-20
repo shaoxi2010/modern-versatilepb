@@ -39,6 +39,12 @@ typedef uint32_t TickType_t;
 #define portMAX_DELAY (TickType_t)0xffffffffUL
 #endif
 /*-----------------------------------------------------------*/
+/* SYSCALLS */
+enum {
+	SCHED_START = 0,
+	SCHED_YIELD,
+    SCHED_STOP,
+};
 
 /* Architecture specifics. */
 #define portARCH_NAME			   "arm9"
@@ -46,7 +52,7 @@ typedef uint32_t TickType_t;
 #define portTICK_PERIOD_MS		   ((TickType_t)1000 / configTICK_RATE_HZ)
 #define portBYTE_ALIGNMENT		   4
 #define portNOP()				   asm volatile("nop")
-#define portYIELD()				   syscall(1, NULL)
+#define portYIELD()				   syscall(SCHED_YIELD, NULL)
 // #define portYIELD()
 #define portMEMORY_BARRIER()	   asm volatile("" ::: "memory")
 #define portYIELD_FROM_ISR(higher) yield_in_isr(higher)

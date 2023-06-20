@@ -13,8 +13,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define CONTEXT_DEBUG
-#define CRITICAL_DEBUG
+// #define CONTEXT_DEBUG
+// #define CRITICAL_DEBUG
 /*
  * Task control block.  A task control block (TCB) is allocated for each task,
  * and stores task state information, including a pointer to the task's context
@@ -139,9 +139,14 @@ static inline void save_context(struct registers *regs)
 #ifdef CONTEXT_DEBUG
 	printf("save_context %s(%08" PRIx32 " ) nest %d\n",
 		   pxCurrentTCB->pcTaskName, info->regs.pc, nesting);
-	// dump_regs("regs", regs);
-	printf("stack: %p limit %p\n", pxCurrentTCB->pxTopOfStack,
-		   pxCurrentTCB->pxStack);
+#if portSTACK_GROWTH < 0
+	if ((UBaseType_t)pxCurrentTCB->pxTopOfStack -
+			(UBaseType_t)pxCurrentTCB->pxStack <
+		sizeof(*regs)) {
+		for (;;)
+			puts("Stack Overflow!!!\n");
+	}
+#endif
 #endif
 }
 
@@ -156,7 +161,6 @@ static inline void restore_context(struct registers *regs)
 #ifdef CONTEXT_DEBUG
 	printf("restore_context %s(%08" PRIx32 " ) nest %d\n",
 		   pxCurrentTCB->pcTaskName, info->regs.pc, nesting);
-	// dump_regs("regs", regs);
 	printf("stack: %p limit %p\n", pxCurrentTCB->pxTopOfStack,
 		   pxCurrentTCB->pxStack);
 #endif
@@ -179,14 +183,12 @@ StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack,
 	info->regs.r0 = (uint32_t)pvParameters;
 	info->regs.sp = (uint32_t)pxTopOfStack;
 	info->regs.cpsr = MODE_SYS | FIQ_BIT;
-	printf("pc %08" PRIx32 " stack:%p\n", info->regs.pc, pxTopOfStack);
 	return pxTopOfStack;
 }
 
 static void timer_isr(void);
 BaseType_t xPortStartScheduler(void)
 {
-	puts(__FUNCTION__);
 	uint32_t ulCompareMatch;
 	/* Calculate the match value required for our desired tick rate. */
 	ulCompareMatch =
@@ -208,20 +210,34 @@ BaseType_t xPortStartScheduler(void)
 	timer_start(0, 0);
 	pic_registerIrq(irq, &timer_isr, PIC_MAX_PRIORITY);
 
-	syscall(0, NULL);
+	syscall(SCHED_START, NULL);
 	return 0;
 }
+
+static struct registers main_state = {};
 
 void vPortEndScheduler(void) { exit(EXIT_SUCCESS); }
 
 void hal_swi_handle(struct registers *regs)
 {
-	if (regs->r0 != 0) {
+	switch (regs->r0) {
+	case SCHED_START:
+        memcpy(&main_state, regs, sizeof(*regs));
+		vTaskSwitchContext();
+		restore_context(regs);
+		break;
+	case SCHED_YIELD:
 		save_context(regs);
+		vTaskSwitchContext();
+		restore_context(regs);
+		break;
+    case SCHED_STOP:
+        memcpy(regs, &main_state, sizeof(*regs));
+        break;
+	default:
+		printf("SWI call %08" PRIx32 " is not impl\n", regs->r0);
+		break;
 	}
-	/* Find the highest priority task that is ready to run. */
-	vTaskSwitchContext();
-	restore_context(regs);
 }
 
 static void timer_isr(void)
@@ -275,6 +291,7 @@ void enter_critical()
 	printf("enter_critical %s(%08" PRIx32 ") nest %d\n",
 		   pxCurrentTCB->pcTaskName, pc, nesting);
 #endif
+	nesting++;
 }
 
 void exit_critical()

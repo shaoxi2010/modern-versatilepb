@@ -40,11 +40,11 @@ void vTaskFunction(void *pvParameters)
 
 int main()
 {
-    puts(__FUNCTION__);
-	if (pdTRUE != xTaskCreate(vTaskFunction, "task1", 128, NULL, 0, NULL)) {
-        printf("task error\n");
-    }
-    vTaskStartScheduler();
+	if (pdTRUE != xTaskCreate(vTaskFunction, "task1", configMINIMAL_STACK_SIZE,
+							  NULL, 0, NULL)) {
+		printf("task error\n");
+	}
+	vTaskStartScheduler();
 	printf("exit!!!\n");
 	return 0;
 }
