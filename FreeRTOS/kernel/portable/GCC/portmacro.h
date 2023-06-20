@@ -46,14 +46,19 @@ typedef uint32_t TickType_t;
 #define portTICK_PERIOD_MS		   ((TickType_t)1000 / configTICK_RATE_HZ)
 #define portBYTE_ALIGNMENT		   4
 #define portNOP()				   asm volatile("nop")
-#define portYIELD()				   asm volatile("swi 0")
+#define portYIELD()				   syscall(1, NULL)
+// #define portYIELD()
 #define portMEMORY_BARRIER()	   asm volatile("" ::: "memory")
 #define portYIELD_FROM_ISR(higher) yield_in_isr(higher)
-#define portENTER_CRITICAL()
-#define portEXIT_CRITICAL()
-#define portDISABLE_INTERRUPTS hw_irq_disableIrqMode
+#define portENTER_CRITICAL()	   enter_critical()
+#define portEXIT_CRITICAL()		   exit_critical()
+#define portDISABLE_INTERRUPTS	   hw_irq_disableIrqMode
 /*-----------------------------------------------------------*/
 void yield_in_isr(BaseType_t isr_yeild);
+void syscall(int cmd, void *args);
+void enter_critical();
+void exit_critical();
+
 /*-----------------------------------------------------------*/
 /* Task function macros as described on the FreeRTOS.org WEB site. */
 #define portTASK_FUNCTION_PROTO(vFunction, pvParameters)                       \
