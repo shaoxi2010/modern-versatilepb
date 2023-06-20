@@ -24,10 +24,6 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/include
 )
 
-add_subdirectory(app)
-add_subdirectory(newlib-stub)
-add_subdirectory(cpu)
-add_subdirectory(init)
 if(GCOV)
 # Check GCC version
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -46,6 +42,13 @@ endif()
 if(${GC_SECTION})
 add_compile_options(-ffunction-sections, -fdata-sections)
 endif()
+
+# 子项目
+add_subdirectory(app)
+add_subdirectory(newlib-stub)
+add_subdirectory(cpu)
+add_subdirectory(init)
+
 
 #编译链接
 add_executable(${TARGET})
