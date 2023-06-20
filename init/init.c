@@ -3,11 +3,15 @@
  *  hardware_init_hook -> software_init_hook ->preinit_array -> _init ->
  * init_array -> main
  */
-#include <mmu.h>
-#include <exceptions.h>
-#include <cpu.h>
+#include <bsp.h>
 #include <compiler.h>
 #include <stdint.h>
+#include <cpu.h>
+#include <exceptions.h>
+#include <interrupt.h>
+#include <mmu.h>
+#include <timer.h>
+#include <uart.h>
 
 void hardware_init_hook(void)
 {
@@ -21,6 +25,25 @@ void hardware_init_hook(void)
 	hw_mmu_init(r6_mem_desc, sizeof(r6_mem_desc) / sizeof(r6_mem_desc[0]));
 	hw_dcache_enable();
 	hw_icache_enable();
+	const uint8_t ctrs = timer_countersPerTimer();
+
+	/* Disable IRQ triggering (may be reenabled after ISRs are properly set) */
+	irq_disableIrqMode();
+
+	/* Init the vectored interrupt controller */
+	pic_init();
+
+	/* Init all counters of all available timers */
+	for (int i = 0; i < BSP_NR_TIMERS; ++i) {
+		for (int j = 0; j < ctrs; ++j) {
+			timer_init(i, j);
+		}
+	}
+
+	/* Init all available UARTs */
+	for (int i = 0; i < BSP_NR_UARTS; ++i) {
+		uart_init(i);
+	}
  }
 
 #define MODE_SYS 0x0000001F

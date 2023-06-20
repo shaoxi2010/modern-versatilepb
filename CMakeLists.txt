@@ -47,6 +47,7 @@ endif()
 add_subdirectory(app)
 add_subdirectory(newlib-stub)
 add_subdirectory(cpu)
+add_subdirectory(drivers)
 add_subdirectory(init)
 
 
