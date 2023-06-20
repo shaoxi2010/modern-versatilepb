@@ -8,10 +8,13 @@
 #include "portmacro.h"
 #include "projdefs.h"
 #include "task.h"
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#define CONTEXT_DEBUG
+#define CRITICAL_DEBUG
 /*
  * Task control block.  A task control block (TCB) is allocated for each task,
  * and stores task state information, including a pointer to the task's context
@@ -119,7 +122,7 @@ typedef tskTCB TCB_t;
 
 struct tskInfo {
 	struct registers regs;
-	int critical_nesting;
+	uint32_t critical_nesting;
 };
 
 static int nesting = 0;
@@ -134,8 +137,11 @@ static inline void save_context(struct registers *regs)
 	memcpy(&info->regs, regs, sizeof(struct registers));
 	info->critical_nesting = nesting;
 #ifdef CONTEXT_DEBUG
-	printf("save_context %s(%x) nest %d\n", pxCurrentTCB->pcTaskName,
-		  info->regs.pc, nesting);
+	printf("save_context %s(%08" PRIx32 " ) nest %d\n",
+		   pxCurrentTCB->pcTaskName, info->regs.pc, nesting);
+	// dump_regs("regs", regs);
+	printf("stack: %p limit %p\n", pxCurrentTCB->pxTopOfStack,
+		   pxCurrentTCB->pxStack);
 #endif
 }
 
@@ -148,8 +154,11 @@ static inline void restore_context(struct registers *regs)
 	memcpy(regs, &info->regs, sizeof(struct registers));
 	nesting = info->critical_nesting;
 #ifdef CONTEXT_DEBUG
-	printf("restore_context %s(%x) nest %d\n", pxCurrentTCB->pcTaskName,
-		   info->regs.pc, nesting);
+	printf("restore_context %s(%08" PRIx32 " ) nest %d\n",
+		   pxCurrentTCB->pcTaskName, info->regs.pc, nesting);
+	// dump_regs("regs", regs);
+	printf("stack: %p limit %p\n", pxCurrentTCB->pxTopOfStack,
+		   pxCurrentTCB->pxStack);
 #endif
 }
 
@@ -170,6 +179,7 @@ StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack,
 	info->regs.r0 = (uint32_t)pvParameters;
 	info->regs.sp = (uint32_t)pxTopOfStack;
 	info->regs.cpsr = MODE_SYS | FIQ_BIT;
+	printf("pc %08" PRIx32 " stack:%p\n", info->regs.pc, pxTopOfStack);
 	return pxTopOfStack;
 }
 
@@ -262,8 +272,8 @@ void enter_critical()
 	extern volatile TCB_t *volatile pxCurrentTCB;
 	uint32_t pc = 0;
 	asm("mov %0, lr" : "=r"(pc));
-	printf("enter_critical %s(%x) nest %d\n", pxCurrentTCB->pcTaskName, pc,
-		   nesting);
+	printf("enter_critical %s(%08" PRIx32 ") nest %d\n",
+		   pxCurrentTCB->pcTaskName, pc, nesting);
 #endif
 }
 
@@ -280,12 +290,12 @@ void exit_critical()
 			hw_irq_enableIrqMode();
 		break;
 	}
-    
+
 #ifdef CRITICAL_DEBUG
 	extern volatile TCB_t *volatile pxCurrentTCB;
 	uint32_t pc = 0;
 	asm("mov %0, lr" : "=r"(pc));
-	printf("exit_critical %s(%x) nest %d\n", pxCurrentTCB->pcTaskName, pc,
-		   nesting);
+	printf("exit_critical %s(%08" PRIx32 ") nest %d\n",
+		   pxCurrentTCB->pcTaskName, pc, nesting);
 #endif
 }

@@ -5,9 +5,9 @@
 #include <stdio.h>
 #include <string.h>
 
-void dump_regs(struct registers *regs)
+void dump_regs(const char *info,struct registers *regs)
 {
-	printf("Execption:\n");
+	printf("%s:\n", info);
 	printf("r00:0x%08" PRIx32 " r01:0x%08" PRIx32 " r02:0x%08" PRIx32
 		   " r03:0x%08" PRIx32 "\n",
 		   regs->r0, regs->r1, regs->r2, regs->r3);
@@ -24,29 +24,25 @@ void dump_regs(struct registers *regs)
 
 WEAK void hal_undefine_handle(struct registers *regs)
 {
-	printf("undefined instr\n");
-	dump_regs(regs);
+	dump_regs("undefined instr", regs);
 	__asm__ __volatile__("mcr p15, 0, %0, c7, c10, 4" : : "r"(0) : "memory");
 }
 WEAK void hal_swi_handle(struct registers *regs)
 {
-	printf("swi\n");
-	dump_regs(regs);
+	dump_regs("swi", regs);
 	__asm__ __volatile__("mcr p15, 0, %0, c7, c10, 4" : : "r"(0) : "memory");
 }
 WEAK void hal_prefectabort_handle(struct registers *regs)
 {
-	printf("prefect abort\n");
-	dump_regs(regs);
+	dump_regs("prefect abort", regs);
 	__asm__ __volatile__("mcr p15, 0, %0, c7, c10, 4" : : "r"(0) : "memory");
 }
 WEAK void hal_dataabort_handle(struct registers *regs)
 {
-	printf("data abort\n");
-	dump_regs(regs);
+	dump_regs("data abort", regs);
 	__asm__ __volatile__("mcr p15, 0, %0, c7, c10, 4" : : "r"(0) : "memory");
 }
-WEAK void hal_irq_handle(struct registers *regs) { dump_regs(regs); }
+WEAK void hal_irq_handle(struct registers *regs) { dump_regs("irq", regs); }
 WEAK void hal_fiq_handle(void) {}
 
 extern char hal_vectors_start[];

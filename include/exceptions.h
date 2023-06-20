@@ -19,7 +19,7 @@ struct registers {
 	uint32_t pc;
 };
 
-void dump_regs(struct registers *regs);
+void dump_regs(const char *info, struct registers *regs);
 void hal_undefine_handle(struct registers *regs);
 void hal_swi_handle(struct registers *regs);
 void hal_prefectabort_handle(struct registers *regs);
