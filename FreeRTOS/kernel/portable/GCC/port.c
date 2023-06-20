@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 // #define CONTEXT_DEBUG
 // #define CRITICAL_DEBUG
@@ -222,7 +223,7 @@ void hal_swi_handle(struct registers *regs)
 {
 	switch (regs->r0) {
 	case SCHED_START:
-        memcpy(&main_state, regs, sizeof(*regs));
+		memcpy(&main_state, regs, sizeof(*regs));
 		vTaskSwitchContext();
 		restore_context(regs);
 		break;
@@ -231,9 +232,9 @@ void hal_swi_handle(struct registers *regs)
 		vTaskSwitchContext();
 		restore_context(regs);
 		break;
-    case SCHED_STOP:
-        memcpy(regs, &main_state, sizeof(*regs));
-        break;
+	case SCHED_STOP:
+		memcpy(regs, &main_state, sizeof(*regs));
+		break;
 	default:
 		printf("SWI call %08" PRIx32 " is not impl\n", regs->r0);
 		break;
@@ -256,6 +257,7 @@ void yield_in_isr(BaseType_t isr_yeild)
 {
 	if (need_switch == pdFALSE)
 		need_switch = isr_yeild;
+	portMEMORY_BARRIER();
 }
 
 void syscall(int cmd, void *args) { asm("svc 0"); }
@@ -265,6 +267,7 @@ void hal_irq_handle(struct registers *regs)
 	need_switch = pdFALSE;
 	extern void _pic_IrqHandler(void);
 	_pic_IrqHandler();
+	portMEMORY_BARRIER();
 	if (need_switch) {
 		save_context(regs);
 		/* Find the highest priority task that is ready to run. */
@@ -291,6 +294,7 @@ void enter_critical()
 	printf("enter_critical %s(%08" PRIx32 ") nest %d\n",
 		   pxCurrentTCB->pcTaskName, pc, nesting);
 #endif
+	portMEMORY_BARRIER();
 	nesting++;
 }
 
@@ -299,6 +303,7 @@ void exit_critical()
 	uint32_t cpsr = 0;
 
 	nesting--;
+	portMEMORY_BARRIER();
 	asm("mrs %0, cpsr" : "=r"(cpsr));
 	switch (cpsr & PSR_MASK) {
 	case MODE_SYS:
