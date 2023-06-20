@@ -10,6 +10,8 @@ include
 FreeRTOS/kernel/include
 -I
 FreeRTOS/kernel/portable/GCC
+-I
+FreeRTOS/c++addon/include
 -idirafter
 /usr/include/newlib/
 -isystem

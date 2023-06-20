@@ -1,50 +1,29 @@
 #include "FreeRTOS.h"
-#include "projdefs.h"
-#include "task.h"
-#include <cstddef>
+#include "thread.hpp"
+#include "ticks.hpp"
 #include <stdio.h>
 
-typedef struct _paramStruct {
-	portCHAR *text;	   /* text to be printed by the task */
-	UBaseType_t delay; /* delay in milliseconds */
-} paramStruct;
+using namespace cpp_freertos;
 
-static const portCHAR defaultText[] = "<NO TEXT>\r\n";
-static const UBaseType_t defaultDelay = 1000;
-
-void vTaskFunction(void *pvParameters)
+class HelloTask : public Thread
 {
-	const portCHAR *taskName;
-	UBaseType_t delay;
-	paramStruct *params = (paramStruct *)pvParameters;
+  public:
+	using Thread::Thread;
 
-	taskName =
-		(NULL == params || NULL == params->text ? defaultText : params->text);
-	delay = (NULL == params ? defaultDelay : params->delay);
-
-	for (;;) {
-		/* Print out the name of this task. */
-
-		printf(taskName);
-
-		vTaskDelay(delay / portTICK_RATE_MS);
+  private:
+	void Run() override
+	{
+		for (;;) {
+			printf("Hello FreeRTOS!\n");
+			Delay(Ticks::MsToTicks(500));
+		}
 	}
-
-	/*
-	 * If the task implementation ever manages to break out of the
-	 * infinite loop above, it must be deleted before reaching the
-	 * end of the function!
-	 */
-	vTaskDelete(NULL);
-}
+};
 
 int main()
 {
-	if (pdTRUE != xTaskCreate(vTaskFunction, "task1", configMINIMAL_STACK_SIZE,
-							  NULL, 0, NULL)) {
-		printf("task error\n");
-	}
-	vTaskStartScheduler();
-	printf("exit!!!\n");
+	HelloTask hello(configMINIMAL_STACK_SIZE, 0);
+	hello.Start();
+	Thread::StartScheduler();
 	return 0;
 }

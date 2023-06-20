@@ -81,6 +81,7 @@ if(${STACK})
 target_link_options(${TARGET} PRIVATE -Wl,-Tstack-segment=${STACK})
 endif()
 
+if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 #QEMU 运行
 add_custom_command(
     TARGET ${TARGET} 
@@ -89,3 +90,4 @@ add_custom_command(
     COMMENT "test on qemu"
     VERBATIM
 )
+endif()
