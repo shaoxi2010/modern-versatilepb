@@ -12,8 +12,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define debug(...) printf(__VA_ARGS__)
-
 /*
  * Task control block.  A task control block (TCB) is allocated for each task,
  * and stores task state information, including a pointer to the task's context
@@ -135,8 +133,10 @@ static inline void save_context(struct registers *regs)
 							  sizeof(*info));
 	memcpy(&info->regs, regs, sizeof(struct registers));
 	info->critical_nesting = nesting;
-	debug("save_context %s(%x) nest %d\n", pxCurrentTCB->pcTaskName,
-		   info->regs.pc, nesting);
+#ifdef CONTEXT_DEBUG
+	printf("save_context %s(%x) nest %d\n", pxCurrentTCB->pcTaskName,
+		  info->regs.pc, nesting);
+#endif
 }
 
 static inline void restore_context(struct registers *regs)
@@ -147,8 +147,10 @@ static inline void restore_context(struct registers *regs)
 							  sizeof(*info));
 	memcpy(regs, &info->regs, sizeof(struct registers));
 	nesting = info->critical_nesting;
-	debug("restore_context %s(%x) nest %d\n",
-		   pxCurrentTCB->pcTaskName, info->regs.pc, nesting);
+#ifdef CONTEXT_DEBUG
+	printf("restore_context %s(%x) nest %d\n", pxCurrentTCB->pcTaskName,
+		   info->regs.pc, nesting);
+#endif
 }
 
 #define PSR_MASK 0x0000001F
@@ -161,7 +163,8 @@ StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack,
 								   TaskFunction_t pxCode,
 								   void *pvParameters) PRIVILEGED_FUNCTION
 {
-	struct tskInfo *info = (struct tskInfo *)((UBaseType_t)pxTopOfStack - sizeof(*info));
+	struct tskInfo *info =
+		(struct tskInfo *)((UBaseType_t)pxTopOfStack - sizeof(*info));
 	memset(info, 0, sizeof(*info));
 	info->regs.pc = (uint32_t)pxCode;
 	info->regs.r0 = (uint32_t)pvParameters;
@@ -229,10 +232,7 @@ void yield_in_isr(BaseType_t isr_yeild)
 		need_switch = isr_yeild;
 }
 
-void syscall(int cmd, void *args)
-{
-	asm("svc 0");
-}
+void syscall(int cmd, void *args) { asm("svc 0"); }
 
 void hal_irq_handle(struct registers *regs)
 {
@@ -250,9 +250,7 @@ void hal_irq_handle(struct registers *regs)
 void enter_critical()
 {
 	uint32_t cpsr = 0;
-	uint32_t pc = 0;
 	asm("mrs %0, cpsr" : "=r"(cpsr));
-	asm("mov %0, lr" : "=r"(pc));
 	switch (cpsr & PSR_MASK) {
 	case MODE_SYS:
 	case MODE_USR:
@@ -260,19 +258,21 @@ void enter_critical()
 			hw_irq_disableIrqMode();
 		break;
 	}
+#ifdef CRITICAL_DEBUG
 	extern volatile TCB_t *volatile pxCurrentTCB;
-	debug("enter_critical %s(%x) nest %d\n", pxCurrentTCB->pcTaskName, pc,
+	uint32_t pc = 0;
+	asm("mov %0, lr" : "=r"(pc));
+	printf("enter_critical %s(%x) nest %d\n", pxCurrentTCB->pcTaskName, pc,
 		   nesting);
-	nesting++;
+#endif
 }
 
 void exit_critical()
 {
 	uint32_t cpsr = 0;
-	uint32_t pc = 0;
+
 	nesting--;
 	asm("mrs %0, cpsr" : "=r"(cpsr));
-	asm("mov %0, lr" : "=r"(pc));
 	switch (cpsr & PSR_MASK) {
 	case MODE_SYS:
 	case MODE_USR:
@@ -280,7 +280,12 @@ void exit_critical()
 			hw_irq_enableIrqMode();
 		break;
 	}
+    
+#ifdef CRITICAL_DEBUG
 	extern volatile TCB_t *volatile pxCurrentTCB;
-	debug("exit_critical %s(%x) nest %d\n", pxCurrentTCB->pcTaskName, pc,
+	uint32_t pc = 0;
+	asm("mov %0, lr" : "=r"(pc));
+	printf("exit_critical %s(%x) nest %d\n", pxCurrentTCB->pcTaskName, pc,
 		   nesting);
+#endif
 }

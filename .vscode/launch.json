@@ -7,12 +7,16 @@
         {
             "type": "gdb",
             "request": "attach",
-            "name": "Attach to gdbserver",
+            "name": "Attach to QEMU",
             "executable": "${workspaceRoot}/build/versatilepb",
             "target": ":1234",
             "remote": true,
             "cwd": "${workspaceRoot}",
-            "gdbpath": "gdb-multiarch"
+            "gdbpath": "gdb-multiarch",
+            "pathSubstitutions": {
+                "../../../../..": "../newlib-3.3.0",
+                "../../../../../..": "../newlib-3.3.0"
+            }
         },
 
     ]
