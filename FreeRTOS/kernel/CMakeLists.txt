@@ -5,12 +5,12 @@ cmake_minimum_required(VERSION 3.15)
 # FREERTOS_PORT
 #
 # User can choose which heap implementation to use (either the implementations
-# included with FreeRTOS [1..5] or a custom implementation ) by providing the
+# included with FreeRTOS [1..6] or a custom implementation ) by providing the
 # option FREERTOS_HEAP. If the option is not set, the cmake will default to
-# using heap_4.c.
+# using heap_6.c.
 
 # Heap number or absolute path to custom heap implementation provided by user
-set(FREERTOS_HEAP "4" CACHE STRING "FreeRTOS heap model number. 1 .. 6. Or absolute path to custom heap source file")
+set(FREERTOS_HEAP "6" CACHE STRING "FreeRTOS heap model number. 1 .. 6. Or absolute path to custom heap source file")
 
 add_library(kernel OBJECT
     croutine.c
