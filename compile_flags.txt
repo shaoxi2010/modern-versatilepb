@@ -6,6 +6,10 @@
 arm-none-eabi
 -I 
 include
+-I
+FreeRTOS/kernel/include
+-I
+FreeRTOS/kernel/portable/GCC
 -idirafter
 /usr/include/newlib/
 -isystem

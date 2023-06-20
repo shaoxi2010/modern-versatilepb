@@ -9,6 +9,11 @@ if(GCOV)
 add_compile_options(-fprofile-arcs -ftest-coverage)
 endif()
 
+include_directories( 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../FreeRTOS/kernel/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../FreeRTOS/kernel/portable/GCC
+    )
+
 #添加目标链接库
 add_library(${PROJECT_NAME} OBJECT ${DIR_SRC})
 

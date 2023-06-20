@@ -1,40 +1,50 @@
-#include "bsp.h"
-#include "interrupt.h"
-#include "timer.h"
+#include "FreeRTOS.h"
+#include "projdefs.h"
+#include "task.h"
+#include <cstddef>
 #include <stdio.h>
 
-static bool triged = false;
+typedef struct _paramStruct {
+	portCHAR *text;	   /* text to be printed by the task */
+	UBaseType_t delay; /* delay in milliseconds */
+} paramStruct;
 
-void timer_isr(void){
-    printf("timer isr enter\n");
-    triged = true;
-    timer_clearInterrupt(0, 0);
+static const portCHAR defaultText[] = "<NO TEXT>\r\n";
+static const UBaseType_t defaultDelay = 1000;
+
+void vTaskFunction(void *pvParameters)
+{
+	const portCHAR *taskName;
+	UBaseType_t delay;
+	paramStruct *params = (paramStruct *)pvParameters;
+
+	taskName =
+		(NULL == params || NULL == params->text ? defaultText : params->text);
+	delay = (NULL == params ? defaultDelay : params->delay);
+
+	for (;;) {
+		/* Print out the name of this task. */
+
+		printf(taskName);
+
+		vTaskDelay(delay / portTICK_RATE_MS);
+	}
+
+	/*
+	 * If the task implementation ever manages to break out of the
+	 * infinite loop above, it must be deleted before reaching the
+	 * end of the function!
+	 */
+	vTaskDelete(NULL);
 }
 
 int main()
 {
-	for (int i = 1; i < 10; i++) {
-		if (i % 3 == 0)
-			printf("%d is divisible by 3\n", i);
-		if (i % 11 == 0)
-			printf("%d is divisible by 11\n", i);
-	}
-
-	const uint8_t irqs[BSP_NR_TIMERS] = BSP_TIMER_IRQS;
-	const uint8_t irq = irqs[0];
-
-	timer_init(0, 0);
-	timer_setLoad(0, 0, 1000);
-	timer_enableInterrupt(0, 0);
-	pic_enableInterrupt(irq);
-	timer_start(0, 0);
-	pic_registerIrq(irq, &timer_isr, PIC_MAX_PRIORITY);
-	irq_enableIrqMode();
-
-    while (!triged) {
-        asm("nop");
+    puts(__FUNCTION__);
+	if (pdTRUE != xTaskCreate(vTaskFunction, "task1", 128, NULL, 0, NULL)) {
+        printf("task error\n");
     }
-    
-    printf("exit!!!\n");
+    vTaskStartScheduler();
+	printf("exit!!!\n");
 	return 0;
 }

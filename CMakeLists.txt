@@ -49,6 +49,7 @@ add_subdirectory(newlib-stub)
 add_subdirectory(cpu)
 add_subdirectory(drivers)
 add_subdirectory(init)
+add_subdirectory(FreeRTOS)
 
 
 #编译链接
