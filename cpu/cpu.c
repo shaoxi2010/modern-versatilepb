@@ -1,18 +1,20 @@
+#include "cpu.h"
 #include <stdint.h>
-#include <cpu.h>
 
-#define ICACHE_MASK (uint32_t)(1 << 12)
-#define DCACHE_MASK (uint32_t)(1 << 2)
+#define ICACHE_MASK		(uint32_t)(1 << 12)
+#define DCACHE_MASK		(uint32_t)(1 << 2)
 #define HIGHVECTOR_MASK (uint32_t)(1 << 13)
 
-static inline uint32_t cp15_rd(void) {
+static inline uint32_t cp15_rd(void)
+{
 	uint32_t i;
 
 	__asm volatile("mrc p15, 0, %0, c1, c0, 0" : "=r"(i));
 	return i;
 }
 
-static inline void cache_enable(uint32_t bit) {
+static inline void cache_enable(uint32_t bit)
+{
 	__asm volatile("mrc  p15,0,r0,c1,c0,0\n\t"
 				   "orr  r0,r0,%0\n\t"
 				   "mcr  p15,0,r0,c1,c0,0"
@@ -21,7 +23,8 @@ static inline void cache_enable(uint32_t bit) {
 				   : "memory");
 }
 
-static inline void cache_disable(uint32_t bit) {
+static inline void cache_disable(uint32_t bit)
+{
 	__asm volatile("mrc  p15,0,r0,c1,c0,0\n\t"
 				   "bic  r0,r0,%0\n\t"
 				   "mcr  p15,0,r0,c1,c0,0"
@@ -87,7 +90,8 @@ uint32_t hw_high_vector_status() { return (cp15_rd() & HIGHVECTOR_MASK); }
 /**
  * Enable CPU's IRQ mode that handles IRQ interrupt requests.
  */
-void hw_irq_enableIrqMode(void) {
+void hw_irq_enableIrqMode(void)
+{
 	/*
 	 * To enable IRQ mode, bit 7 of the Program Status Register (CSPR)
 	 * must be cleared to 0. See pp. 2-15 to 2-17 of the DDI0222 for more
@@ -103,7 +107,8 @@ void hw_irq_enableIrqMode(void) {
 /**
  * Disable CPU's IRQ and FIQ mode that handle IRQ interrupt requests.
  */
-void hw_irq_disableIrqMode(void) {
+void hw_irq_disableIrqMode(void)
+{
 	/*
 	 * To disable IRQ mode, bit 7 of the Program Status Register (CSPR)
 	 * must be set t1 0. See pp. 2-15 to 2-17 of the DDI0222 for more details.

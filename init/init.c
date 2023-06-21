@@ -3,15 +3,15 @@
  *  hardware_init_hook -> software_init_hook ->preinit_array -> _init ->
  * init_array -> main
  */
-#include <bsp.h>
-#include <compiler.h>
+#include "bsp.h"
+#include "compiler.h"
+#include "cpu.h"
+#include "exceptions.h"
+#include "interrupt.h"
+#include "mmu.h"
+#include "timer.h"
+#include "uart.h"
 #include <stdint.h>
-#include <cpu.h>
-#include <exceptions.h>
-#include <interrupt.h>
-#include <mmu.h>
-#include <timer.h>
-#include <uart.h>
 
 void hardware_init_hook(void)
 {
@@ -44,7 +44,7 @@ void hardware_init_hook(void)
 	for (int i = 0; i < BSP_NR_UARTS; ++i) {
 		uart_init(i);
 	}
- }
+}
 
 #define MODE_SYS 0x0000001F
 #define FIQ_BIT	 0x00000040
@@ -57,6 +57,6 @@ NAKED void software_init_hook(void)
 	/* 切换运行模式到system mode*/
 	asm("mov %0, lr" : "=r"(lr)); // 保存lr到内存
 	asm("msr cpsr, %0" ::"i"(MODE_SYS | FIQ_BIT | IRQ_BIT));
-	asm("mov lr, %0" ::"r"(lr)); //恢复lr
-    asm("bx lr"); //返回,入口时blx传入
+	asm("mov lr, %0" ::"r"(lr)); // 恢复lr
+	asm("bx lr");				 // 返回,入口时blx传入
 }

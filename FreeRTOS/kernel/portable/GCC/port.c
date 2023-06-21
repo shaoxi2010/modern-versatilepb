@@ -8,11 +8,11 @@
 #include "portmacro.h"
 #include "projdefs.h"
 #include "task.h"
+#include "timer.h"
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
 
 // #define CONTEXT_DEBUG
 // #define CRITICAL_DEBUG
@@ -217,7 +217,18 @@ BaseType_t xPortStartScheduler(void)
 
 static struct registers main_state = {};
 
-void vPortEndScheduler(void) { exit(EXIT_SUCCESS); }
+void vPortEndScheduler(void)
+{
+	const uint8_t irqs[BSP_NR_TIMERS] = BSP_TIMER_IRQS;
+	const uint8_t irq = irqs[0];
+	timer_disableInterrupt(0, 0);
+	timer_stop(0, 0);
+	pic_disableInterrupt(irq);
+
+	/* we will back to the function where the scheduler start and keep the cpu
+	 * state */
+	syscall(SCHED_STOP, NULL);
+}
 
 void hal_swi_handle(struct registers *regs)
 {
@@ -245,18 +256,17 @@ static void timer_isr(void)
 {
 	/* Increment the tick count - this may wake a task. */
 	if (xTaskIncrementTick() != pdFALSE) {
-		/* Find the highest priority task that is ready to run. */
 		yield_in_isr(pdTRUE);
 	}
 	timer_clearInterrupt(0, 0);
 }
 
-static BaseType_t need_switch = pdFALSE;
+static BaseType_t need_switch_in_isr = pdFALSE;
 
 void yield_in_isr(BaseType_t isr_yeild)
 {
-	if (need_switch == pdFALSE)
-		need_switch = isr_yeild;
+	if (need_switch_in_isr == pdFALSE)
+		need_switch_in_isr = isr_yeild;
 	portMEMORY_BARRIER();
 }
 
@@ -264,11 +274,11 @@ void syscall(int cmd, void *args) { asm("svc 0"); }
 
 void hal_irq_handle(struct registers *regs)
 {
-	need_switch = pdFALSE;
+	need_switch_in_isr = pdFALSE;
 	extern void _pic_IrqHandler(void);
 	_pic_IrqHandler();
 	portMEMORY_BARRIER();
-	if (need_switch) {
+	if (need_switch_in_isr) {
 		save_context(regs);
 		/* Find the highest priority task that is ready to run. */
 		vTaskSwitchContext();

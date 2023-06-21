@@ -1,11 +1,11 @@
+#include "exceptions.h"
 #include <compiler.h>
-#include <stdint.h>
-#include <exceptions.h>
 #include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
-void dump_regs(const char *info,struct registers *regs)
+void dump_regs(const char *info, struct registers *regs)
 {
 	printf("%s:\n", info);
 	printf("r00:0x%08" PRIx32 " r01:0x%08" PRIx32 " r02:0x%08" PRIx32

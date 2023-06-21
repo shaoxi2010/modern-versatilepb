@@ -34,7 +34,7 @@
  * If not allowing malloc, might require your custom code
  * in gcov_public.c to set buffer sizes.
  */
-// #define GCOV_OPT_USE_MALLOC
+#define GCOV_OPT_USE_MALLOC
 
 /* Allow functions to use othe stdlib functions.
  * Not all embedded systems allow that, but instead

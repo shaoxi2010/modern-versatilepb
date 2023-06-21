@@ -176,8 +176,8 @@ class Thread {
          */
         static inline void EndScheduler()
         {
-            vTaskEndScheduler();
-            SchedulerActive = false;
+			SchedulerActive = false;
+			vTaskEndScheduler();
         }
 
 #if (INCLUDE_vTaskSuspend == 1)

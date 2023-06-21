@@ -1,6 +1,6 @@
+#include "uart.h"
 #include <reent.h>
 #include <sys/types.h>
-#include <uart.h>
 
 ssize_t _write_r(struct _reent *ptr, int fd, const void *buf, size_t count)
 {
