@@ -18,3 +18,9 @@ cmake选项:
 4. DATA: 数据段起始地址
 5. STACK: 堆栈段起始地址
 6. GCOV: 代码覆盖率检查, GCC12目前无法使用
+
+位置无关代码：
+1. 正常的位置无关代码分为两部分got(数据位置无关)和plt(代码位置无关)
+2. 编译的-fPIC选项会强制代码生成数据位置无关代码
+3. 链接的-shared选项会强制生成plt函数位置无关代码
+4. arm-none-eabi-ld -R"../build/versatilepb" -shared -o test.out test.o 仅填装symbol

@@ -40,7 +40,7 @@ add_compile_options(-flto -ffat-lto-objects)
 endif()
 
 if(${GC_SECTION})
-add_compile_options(-ffunction-sections, -fdata-sections)
+add_compile_options(-ffunction-sections -fdata-sections)
 endif()
 
 # 子项目
