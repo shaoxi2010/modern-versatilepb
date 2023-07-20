@@ -3,6 +3,7 @@
 
 #include "FreeRTOSConfig.h"
 #include "cpu.h"
+#include <stdbool.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -43,28 +44,29 @@ typedef uint32_t TickType_t;
 enum {
 	SCHED_START = 0,
 	SCHED_YIELD,
-    SCHED_STOP,
+	SCHED_STOP,
 };
 
 /* Architecture specifics. */
-#define portARCH_NAME			   "arm9"
-#define portSTACK_GROWTH		   (-1)
-#define portTICK_PERIOD_MS		   ((TickType_t)1000 / configTICK_RATE_HZ)
-#define portBYTE_ALIGNMENT		   4
-#define portNOP()				   asm volatile("nop")
-#define portYIELD()				   syscall(SCHED_YIELD, NULL)
+#define portARCH_NAME	   "arm9"
+#define portSTACK_GROWTH   (-1)
+#define portTICK_PERIOD_MS ((TickType_t)1000 / configTICK_RATE_HZ)
+#define portBYTE_ALIGNMENT 4
+#define portNOP()		   asm volatile("nop")
+#define portYIELD()		   syscall(SCHED_YIELD, NULL)
 // #define portYIELD()
 #define portMEMORY_BARRIER()	   asm volatile("" ::: "memory")
 #define portYIELD_FROM_ISR(higher) yield_in_isr(higher)
 #define portENTER_CRITICAL()	   enter_critical()
 #define portEXIT_CRITICAL()		   exit_critical()
 #define portDISABLE_INTERRUPTS	   hw_irq_disableIrqMode
+#define portTHREADMODE()		   get_arm_thread_mode()
 /*-----------------------------------------------------------*/
 void yield_in_isr(BaseType_t isr_yeild);
 void syscall(int cmd, void *args);
 void enter_critical();
 void exit_critical();
-
+bool get_arm_thread_mode();
 /*-----------------------------------------------------------*/
 /* Task function macros as described on the FreeRTOS.org WEB site. */
 #define portTASK_FUNCTION_PROTO(vFunction, pvParameters)                       \

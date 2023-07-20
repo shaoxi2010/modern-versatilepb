@@ -286,16 +286,24 @@ void hal_irq_handle(struct registers *regs)
 	}
 }
 
-void enter_critical()
+bool get_arm_thread_mode()
 {
 	uint32_t cpsr = 0;
 	asm("mrs %0, cpsr" : "=r"(cpsr));
 	switch (cpsr & PSR_MASK) {
 	case MODE_SYS:
 	case MODE_USR:
+		return true;
+		break;
+	}
+	return false;
+}
+
+void enter_critical()
+{
+	if (get_arm_thread_mode()) {
 		if (!nesting)
 			hw_irq_disableIrqMode();
-		break;
 	}
 #ifdef CRITICAL_DEBUG
 	extern volatile TCB_t *volatile pxCurrentTCB;
@@ -310,19 +318,12 @@ void enter_critical()
 
 void exit_critical()
 {
-	uint32_t cpsr = 0;
-
 	nesting--;
 	portMEMORY_BARRIER();
-	asm("mrs %0, cpsr" : "=r"(cpsr));
-	switch (cpsr & PSR_MASK) {
-	case MODE_SYS:
-	case MODE_USR:
+	if (get_arm_thread_mode()) {
 		if (!nesting)
 			hw_irq_enableIrqMode();
-		break;
 	}
-
 #ifdef CRITICAL_DEBUG
 	extern volatile TCB_t *volatile pxCurrentTCB;
 	uint32_t pc = 0;

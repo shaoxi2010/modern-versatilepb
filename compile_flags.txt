@@ -4,6 +4,7 @@
 -stdlib=libstdc++
 -target
 arm-none-eabi
+-DFREERTOS
 -I 
 include
 -I

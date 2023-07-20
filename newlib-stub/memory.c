@@ -1,47 +1,35 @@
-// Simplified and customized version based on a code from article below.
-// http://www.nadler.com/embedded/newlibAndFreeRTOS.html
+#if defined(FREERTOS)
 #include "FreeRTOS.h"
 #include "portmacro.h"
+#include "semphr.h"
 #include "task.h"
+#endif
+#include <assert.h>
 #include <errno.h>
 #include <malloc.h>
 #include <reent.h>
 #include <stdio.h>
 
+#if defined(FREERTOS)
 #if !defined(configUSE_NEWLIB_REENTRANT) || (configUSE_NEWLIB_REENTRANT != 1)
 #warning "#define configUSE_NEWLIB_REENTRANT 1"
+#endif
+#else
+#define portENTER_CRITICAL()
+#define portEXIT_CRITICAL()
 #endif
 
 static uint32_t heap_total_size;
 static uint32_t heap_bytes_remaining;
 
 //
-// FreeRTOS memory API
-//
-
-void *pvPortMalloc(size_t xSize) PRIVILEGED_FUNCTION { return malloc(xSize); }
-
-void vPortFree(void *pv) PRIVILEGED_FUNCTION { free(pv); };
-
-// error handing
-void vApplicationMallocFailedHook() { printf("Could not alloc memory!!!\r\n"); }
-
-size_t xPortGetFreeHeapSize(void) PRIVILEGED_FUNCTION
-{
-	/* available space now managed by newlib */
-	struct mallinfo mi = mallinfo();
-	/* plus space not yet handed to newlib by sbrk */
-	return mi.fordblks + heap_bytes_remaining;
-}
-
-void vPortInitialiseBlocks(void) PRIVILEGED_FUNCTION{};
-
-//
 // _sbrk implementation
 //
 
-#define __HeapBase	((char *)(configTOTAL_HEAP_START))
-#define __HeapLimit ((char *)(configTOTAL_HEAP_SIZE + configTOTAL_HEAP_START))
+extern char _end[];
+
+#define __HeapBase	(_end)
+#define __HeapLimit (_end + (4 << 20))
 
 static char *current_heap_end = __HeapBase;
 
@@ -54,7 +42,6 @@ void *_sbrk_r(struct _reent *pReent, int incr)
 	char *previous_heap_end = current_heap_end;
 	if (current_heap_end + incr > __HeapLimit) {
 		portEXIT_CRITICAL();
-		vApplicationMallocFailedHook();
 		pReent->_errno = ENOMEM;
 		return (char *)-1; // the malloc-family routine that called sbrk will
 						   // return 0
@@ -74,26 +61,39 @@ void *_sbrk(int incr) { return sbrk(incr); };
 // malloc_[un]lock implementation
 //
 
-static int malloc_lock_counter = 0;
+#if defined (FREERTOS)
+static SemaphoreHandle_t malloc_mutex = NULL;
+static bool malloc_mutex_in_progress = false;
+#endif
+static int malloc_count = 0;
 
 void __malloc_lock(struct _reent *r)
 {
-	if (malloc_lock_counter == 0) {
-		portENTER_CRITICAL();
+#if defined(FREERTOS)
+	if (malloc_mutex_in_progress)
+		return ;
+	if (malloc_mutex == NULL) {
+        malloc_mutex_in_progress = true;
+		malloc_mutex = xSemaphoreCreateMutex();
+        malloc_mutex_in_progress = false;
 	}
-    portMEMORY_BARRIER();
-	malloc_lock_counter += 1;
+	if (portTHREADMODE() && xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+		xSemaphoreTake(malloc_mutex, portMAX_DELAY);
+	}
+#endif
+	malloc_count += 1;
+	assert(malloc_count == 1);
 };
 
 void __malloc_unlock(struct _reent *r)
 {
-	malloc_lock_counter -= 1;
-	portMEMORY_BARRIER();
-	if (malloc_lock_counter == 0)
-		portEXIT_CRITICAL();
+#if defined(FREERTOS)
+	if (malloc_mutex_in_progress)
+		return;
+	if (portTHREADMODE() && xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+		xSemaphoreGive(malloc_mutex);
+	}
+#endif
+	malloc_count -= 1;
+	assert(malloc_count == 0);
 };
-
-uint32_t mem_is_heap_allocated(const void *ptr)
-{
-	return (ptr >= (void *)__HeapBase && ptr < (void *)__HeapLimit);
-}

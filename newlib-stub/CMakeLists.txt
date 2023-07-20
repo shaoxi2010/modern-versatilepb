@@ -1,5 +1,12 @@
 project(newlib-stub)
 
+add_compile_options(-DFREERTOS)
+
+include_directories(
+    ${CMAKE_SOURCE_DIR}/FreeRTOS/kernel/include
+    ${CMAKE_SOURCE_DIR}/FreeRTOS/kernel/portable/GCC
+    )
+
 #添加目录下的所以文件
 aux_source_directory(. DIR_SRC)
 
