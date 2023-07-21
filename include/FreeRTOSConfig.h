@@ -72,6 +72,7 @@ to exclude the API function. */
 #define configUSE_NEWLIB_REENTRANT		 1
 #define configUSE_C_RUNTIME_TLS_SUPPORT	 1
 #define configUSE_MUTEXES				 1
+#define configUSE_RECURSIVE_MUTEXES      1
 #define configUSE_QUEUE_SETS			 1
 #define configSUPPORT_DYNAMIC_ALLOCATION 1
 #define configUSE_COUNTING_SEMAPHORES	 1

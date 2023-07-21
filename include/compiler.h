@@ -13,7 +13,7 @@ extern "C" {
 
 #define USED		__attribute__((used))
 
-#define ALIGNED(x)	__attribute__(aligned(x))
+#define ALIGNED(x)	__attribute__((aligned(x)))
 
 #define CONSTRUCTOR __attribute__((constructor)) // prio is 65535
 

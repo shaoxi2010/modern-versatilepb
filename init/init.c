@@ -16,13 +16,12 @@
 void hardware_init_hook(void)
 {
 	struct mem_desc r6_mem_desc[] = {
-		{0x00000000, 0xFFFFFFFF, 0x00000000,
-		 RW_NCNB}, /* None cached for 4G memory */
-		{0x00000000, 0x4000000 - 1, 0x00000000,
-		 RW_CB}, /* 64M cached SDRAM memory */
-	};
-	hw_install_low_vector();
+		{0x00000000, 0x4000000 - 1, 0x00000000, 1},
+		{0x10000000, 0x20000000 - 1, 0x10000000, 0},
+		{0xffff0000, 0xffff1000 - 1, 0x00000000, 1},
+        };
 	hw_mmu_init(r6_mem_desc, sizeof(r6_mem_desc) / sizeof(r6_mem_desc[0]));
+	hw_install_high_vector();
 	hw_dcache_enable();
 	hw_icache_enable();
 	const uint8_t ctrs = timer_countersPerTimer();

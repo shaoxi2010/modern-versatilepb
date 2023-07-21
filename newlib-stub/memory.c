@@ -14,6 +14,9 @@
 #if !defined(configUSE_NEWLIB_REENTRANT) || (configUSE_NEWLIB_REENTRANT != 1)
 #warning "#define configUSE_NEWLIB_REENTRANT 1"
 #endif
+#if !defined(configUSE_RECURSIVE_MUTEXES) || (configUSE_RECURSIVE_MUTEXES != 1)
+#warning "#define configUSE_RECURSIVE_MUTEXES 1"
+#endif
 #else
 #define portENTER_CRITICAL()
 #define portEXIT_CRITICAL()
@@ -65,8 +68,8 @@ void *_sbrk(int incr) { return sbrk(incr); };
 static SemaphoreHandle_t malloc_mutex = NULL;
 static bool malloc_mutex_in_progress = false;
 #endif
-static int malloc_count = 0;
 
+/* malloc 要求锁机制为递归锁，非rtos不再做任何检查自己小心 */
 void __malloc_lock(struct _reent *r)
 {
 #if defined(FREERTOS)
@@ -74,15 +77,13 @@ void __malloc_lock(struct _reent *r)
 		return ;
 	if (malloc_mutex == NULL) {
         malloc_mutex_in_progress = true;
-		malloc_mutex = xSemaphoreCreateMutex();
-        malloc_mutex_in_progress = false;
+		malloc_mutex = xSemaphoreCreateRecursiveMutex();
+		malloc_mutex_in_progress = false;
 	}
 	if (portTHREADMODE() && xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
-		xSemaphoreTake(malloc_mutex, portMAX_DELAY);
+		xSemaphoreTakeRecursive(malloc_mutex, portMAX_DELAY);
 	}
 #endif
-	malloc_count += 1;
-	assert(malloc_count == 1);
 };
 
 void __malloc_unlock(struct _reent *r)
@@ -91,9 +92,7 @@ void __malloc_unlock(struct _reent *r)
 	if (malloc_mutex_in_progress)
 		return;
 	if (portTHREADMODE() && xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
-		xSemaphoreGive(malloc_mutex);
+		xSemaphoreGiveRecursive(malloc_mutex);
 	}
 #endif
-	malloc_count -= 1;
-	assert(malloc_count == 0);
 };

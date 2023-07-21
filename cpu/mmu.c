@@ -1,4 +1,8 @@
 #include "mmu.h"
+#include "compiler.h"
+#include <assert.h>
+#include <malloc.h>
+#include <sys/param.h>
 
 void mmu_setttbase(uint32_t i)
 {
@@ -146,21 +150,86 @@ void mmu_invalidate_dcache_all()
 	asm volatile("mcr p15, 0, %0, c7, c6, 0" : : "r"(0));
 }
 
-static volatile uint32_t _page_table[4 * 1024]
-	__attribute__((aligned(16 * 1024)));
+/* 4G line */
+ALIGNED(MMU_DESCRIPTOR_L1_SMALL_ENTRY_NUMBERS)
+static volatile uint8_t _page_table[MMU_DESCRIPTOR_L1_SMALL_ENTRY_NUMBERS] = {};
 
-void mmu_setmtt(uint32_t vaddrStart, uint32_t vaddrEnd, uint32_t paddrStart,
-				uint32_t attr)
+/* arm9 没有控制运行属性的值也没有APX和TEX */
+#define MMU_DESCRIPTOR_L1_SMALL (MMU_DESCRIPTOR_L1_TYPE_PAGE_TABLE)
+#define MMU_DESCRIPTOR_L2_4K_NCNB                                              \
+	(MMU_DESCRIPTOR_L2_TYPE_SMALL_PAGE |                                       \
+	 MMU_DESCRIPTOR_L2_TYPE_STRONGLY_ORDERED | MMU_DESCRIPTOR_L2_AP_P_RW_U_RW)
+#define MMU_DESCRIPTOR_L2_4K_CB                                                \
+	(MMU_DESCRIPTOR_L2_TYPE_SMALL_PAGE |                                       \
+	 MMU_DESCRIPTOR_L2_TYPE_NORMAL_WRITE_BACK_ALLOCATE |                       \
+	 MMU_DESCRIPTOR_L2_AP_P_RW_U_RW)
+#define MMU_DESCRIPTOR_L1_1M_NCNB                                              \
+	(MMU_DESCRIPTOR_L1_TYPE_SECTION | MMU_DESCRIPTOR_L1_AP_P_RW_U_RW |         \
+	 MMU_DESCRIPTOR_L1_TYPE_STRONGLY_ORDERED)
+#define MMU_DESCRIPTOR_L1_1M_CB                                                \
+	(MMU_DESCRIPTOR_L1_TYPE_SECTION | MMU_DESCRIPTOR_L1_AP_P_RW_U_RW |         \
+	 MMU_DESCRIPTOR_L1_TYPE_NORMAL_WRITE_BACK_ALLOCATE)
+
+static uint32_t mapsection(uint32_t vaddr, uint32_t paddr, uint32_t count,
+						   uint32_t cached)
 {
-	volatile uint32_t *pTT;
-	volatile int nSec;
-	int i = 0;
-	pTT = (uint32_t *)_page_table + (vaddrStart >> 20);
-	nSec = (vaddrEnd >> 20) - (vaddrStart >> 20);
-	for (i = 0; i <= nSec; i++) {
-		*pTT = attr | (((paddrStart >> 20) + i) << 20);
-		pTT++;
+	uint32_t *l1_entry = (uint32_t *)_page_table;
+	uint32_t offset = vaddr >> 20;
+
+	if (cached)
+		l1_entry[offset] =
+			MMU_DESCRIPTOR_L1_SECTION_ADDR(paddr) | MMU_DESCRIPTOR_L1_1M_CB;
+	else
+		l1_entry[offset] =
+			MMU_DESCRIPTOR_L1_SECTION_ADDR(paddr) | MMU_DESCRIPTOR_L1_1M_NCNB;
+
+	return MMU_DESCRIPTOR_L2_NUMBERS_PER_L1;
+}
+
+static uint32_t mapl2(uint32_t *l2_entry, uint32_t vaddr, uint32_t paddr,
+					  uint32_t count, uint32_t cached)
+{
+	uint32_t offset = 0;
+	uint32_t len = 0;
+	vaddr = vaddr & MMU_DESCRIPTOR_L1_SMALL_MASK;
+	offset = vaddr >> 12;
+	len = MIN(MMU_DESCRIPTOR_L2_NUMBERS_PER_L1 - offset, count);
+	for (int i = 0; i < len; i++) {
+		if (cached)
+			l2_entry[offset + i] = MMU_DESCRIPTOR_L2_SMALL_PAGE_ADDR(paddr) |
+								   MMU_DESCRIPTOR_L2_4K_CB;
+		else
+			l2_entry[offset + i] = MMU_DESCRIPTOR_L2_SMALL_PAGE_ADDR(paddr) |
+								   MMU_DESCRIPTOR_L2_4K_NCNB;
+		paddr += MMU_DESCRIPTOR_L2_SMALL_SIZE;
 	}
+
+	return count;
+}
+
+int mmu_map(uint32_t vaddr, uint32_t paddr, uint32_t count, uint32_t cached)
+{
+	uint32_t saveCounts = 0;
+	while (count > 0) {
+		if (MMU_DESCRIPTOR_IS_L1_SIZE_ALIGNED(vaddr) &&
+			MMU_DESCRIPTOR_IS_L1_SIZE_ALIGNED(paddr) &&
+			count >= MMU_DESCRIPTOR_L2_NUMBERS_PER_L1) {
+			saveCounts = mapsection(vaddr, paddr, count, cached);
+		} else {
+			uint32_t *l2_entry = (uint32_t *)memalign(1024, 1024);
+			assert(l2_entry);
+			saveCounts = mapl2(l2_entry, vaddr, paddr, count, cached);
+			uint32_t *l1_entry = (uint32_t *)_page_table;
+			uint32_t offset = vaddr >> 20;
+			l1_entry[offset] =
+				MMU_DESCRIPTOR_L1_PAGE_TABLE_ADDR((uint32_t)l2_entry) |
+				MMU_DESCRIPTOR_L1_SMALL;
+		}
+		vaddr += MMU_DESCRIPTOR_L2_SMALL_SIZE * saveCounts;
+		paddr += MMU_DESCRIPTOR_L2_SMALL_SIZE * saveCounts;
+		count -= saveCounts;
+	}
+	return 0;
 }
 
 void hw_mmu_init(struct mem_desc *mdesc, uint32_t size)
@@ -173,8 +242,9 @@ void hw_mmu_init(struct mem_desc *mdesc, uint32_t size)
 
 	/* set page table */
 	for (; size > 0; size--) {
-		mmu_setmtt(mdesc->vaddr_start, mdesc->vaddr_end, mdesc->paddr_start,
-				   mdesc->attr);
+		uint32_t count = (mdesc->vaddr_end - mdesc->vaddr_start + 1) /
+						 MMU_DESCRIPTOR_L2_SMALL_SIZE;
+		mmu_map(mdesc->vaddr_start, mdesc->paddr_start, count, mdesc->cached);
 		mdesc++;
 	}
 
