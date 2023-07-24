@@ -270,7 +270,16 @@ void yield_in_isr(BaseType_t isr_yeild)
 	portMEMORY_BARRIER();
 }
 
-void syscall(int cmd, void *args) { asm("svc 0"); }
+void syscall(int cmd, void *args)
+{
+	asm volatile(
+        "mov r0, %0\n\t"
+        "mov r1, %1\n\t"
+        "svc 0\n\t"
+        ::"r"(cmd), "r"(args)
+        :"r0", "r1"
+        );
+}
 
 void hal_irq_handle(struct registers *regs)
 {
